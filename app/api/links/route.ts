@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { z } from "zod"
 import { processLink } from "@/lib/api/links/process-link"
 import { createLink } from "@/lib/api/links/create-link"
+import { prisma } from "@/lib/prisma"
 
 const createLinkSchema = z.object({
   url: z.string().min(1, "URL is required"),
@@ -43,6 +44,42 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(created, { status: 201 })
   } catch (error) {
     console.error("[POST /api/links]", error)
+    return NextResponse.json(
+      { error: { code: "internal_error", message: "Something went wrong" } },
+      { status: 500 }
+    )
+  }
+}
+
+export async function GET() {
+  try {
+    const links = await prisma.link.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        url: true,
+        slug: true,
+        expiresAt: true,
+        createdAt: true,
+        _count: {
+          select: { clicks: true },
+        },
+      },
+    })
+
+    const formatted = links.map((link) => ({
+      id: link.id,
+      url: link.url,
+      slug: link.slug,
+      shortLink: process.env.NEXT_PUBLIC_APP_URL + "/" + link.slug,
+      expiresAt: link.expiresAt,
+      createdAt: link.createdAt,
+      totalClicks: link._count.clicks,
+    }))
+
+    return NextResponse.json(formatted, { status: 200 })
+  } catch (error) {
+    console.error("[GET /api/links]", error)
     return NextResponse.json(
       { error: { code: "internal_error", message: "Something went wrong" } },
       { status: 500 }
