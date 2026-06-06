@@ -3,6 +3,7 @@ import { z } from "zod"
 import { processLink } from "@/lib/api/links/process-link"
 import { createLink } from "@/lib/api/links/create-link"
 import { prisma } from "@/lib/prisma"
+import { withApiKey } from "@/lib/middleware/with-api-key"
 
 const createLinkSchema = z.object({
   url: z.string().min(1, "URL is required"),
@@ -11,7 +12,7 @@ const createLinkSchema = z.object({
   expiresAt: z.string().optional(),
 })
 
-export async function POST(req: NextRequest) {
+async function createLinkHandler(req: NextRequest, context: { params: Record<string, string> }) {
   try {
     // 1. Parse and validate request body
     const body = await req.json()
@@ -50,6 +51,8 @@ export async function POST(req: NextRequest) {
     )
   }
 }
+
+export const POST = withApiKey(createLinkHandler)
 
 export async function GET() {
   try {
