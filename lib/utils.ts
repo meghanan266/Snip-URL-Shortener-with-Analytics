@@ -1,4 +1,9 @@
 import { customAlphabet } from "nanoid"
+import { type ClassValue, clsx } from "clsx"
+
+export function cn(...inputs: ClassValue[]) {
+  return clsx(inputs)
+}
 
 // alphabet excludes characters that look similar (0, O, l, 1, I)
 // to make slugs easier to read and type
